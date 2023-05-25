@@ -1,0 +1,112 @@
+---
+title: "Lab9_inclass"
+author: "Qianqian Tao"
+format: pdf
+---
+```{r}
+
+db <- read.csv("Data Export Summary_2.csv")
+#To remove comma in the original dataset use global substitution (gsub)
+modified_data <- gsub(",", "", db$X.ray)
+#To change the value to numeric, use as.numeric()
+numeric_data <- as.numeric(modified_data)
+#you can also turn this into a function
+make_sum_numeric <- function(x){
+    sum(as.numeric(gsub(",", "",x)))
+}
+
+```
+>Q1: What percentage of structures in the PDB are solved by X-Ray and Electron Microscopy.
+
+```{r}
+total <-make_sum_numeric(db$Total)
+X.Ray_sum <- make_sum_numeric(db$X.ray)
+X.Ray_protion <- (X.Ray_sum)/total*100
+X.Ray_protion <- round(X.Ray_protion,3)
+EM_sum <- make_sum_numeric(db$EM)
+EM_protion <- (EM_sum)/total
+EM_protion <- round(EM_protion, 3)
+```
+`r X.Ray_protion` of structures are solved by X-Ray and `r EM_protion` of structures are solved by EM. 
+
+>Q2: What proportion of structures in the PDB are protein?
+
+```{r}
+head(db)
+#how to access to the last column
+column_number <- ncol(db)
+db[1,column_number]
+protein_structure <- make_sum_numeric(db[1,8])
+protein_protion <- protein_structure/total
+protein_protion <- round(protein_protion,2)
+```
+`r protein_protion` of structures are proteins
+
+>Q3: Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB?
+
+Skipped
+
+>Q4: Water molecules normally have 3 atoms. Why do we see just one atom per water molecule in this structure?
+
+Hydrogen is the smallest atom. It is hard to be captured. Oxygen is much larger than hydrogen and can be visualized.
+
+The structure is too low a resolution to see a H atom. You need a sub 1 Angstrom resolution to see the Hydrogen atom. 
+
+>Q5: There is a critical “conserved” water molecule in the binding site. Can you identify this water molecule? What residue number does this water molecule have?
+
+HOH308
+
+>Q6: Generate and save a figure clearly showing the two distinct chains of HIV-protease along with the ligand. You might also consider showing the catalytic residues ASP 25 in each chain and the critical water (we recommend “Ball & Stick” for these side-chains). Add this figure to your Quarto document.
+
+![HIV-PR structure from MERK with a bound drug](1HSG.png)
+#Working with Structures in R
+We can use the `bio3d` package to read and perform bioinformatics calculations on PDB structures
+
+```{r}
+library(bio3d)
+pdb <- read.pdb("1hsg")
+pdb 
+```
+
+>Q7: How many amino acid residues are there in this pdb object? 
+
+198
+
+>Q8: Name one of the two non-protein residues? 
+
+H2O and MK1
+
+>Q9: How many protein chains are in this structure?
+
+ 2 (A and B)
+ 
+ 
+```{r}
+#A list object, combine vectors... all things together
+attributes(pdb)
+```
+```{r}
+head(pdb$atom)
+```
+
+```{r}
+adk <- read.pdb("6s36")
+#has one chain A
+
+```
+ 
+```{r}
+# Perform flexiblity prediction,Normal mode analysis (NMA) is a structural bioinformatics method to predict protein flexibility and potential functional motions (a.k.a. conformational changes).
+
+m <- nma(adk)
+plot(m)
+#bottom graphs interested to explore, peaks are regions that are more likely to move, more flexible 
+
+```
+Write out a "movie" (a.k.a. trajectory) of the motion for viewing in MOLstar
+
+```{r}
+mktrj(m, file="adk_m7.pdb")
+```
+ 
+ 

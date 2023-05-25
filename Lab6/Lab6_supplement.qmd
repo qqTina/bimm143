@@ -1,0 +1,82 @@
+---
+title: "Lab6_supplement"
+author: "Qianqian Tao"
+format: pdf
+---
+
+```{r}
+# (A. Can you improve this analysis code?
+df <- data.frame(a=1:10, b=seq(200,400,length=10),c=11:20,d=NA)
+df_unmodified <- df
+df$a <- (df$a - min(df$a)) / (max(df$a) - min(df$a))
+df$b <- (df$b - min(df$a)) / (max(df$b) - min(df$b))
+df$c <- (df$c - min(df$c)) / (max(df$c) - min(df$c))
+df$d <- (df$d - min(df$d)) / (max(df$a) - min(df$d)) 
+
+```
+
+```{r}
+# Can you improve this analysis code?
+library(bio3d)
+s1 <- read.pdb("4AKE")  # kinase with drug
+
+s2 <- read.pdb("1AKE")  # kinase no drug
+s3 <- read.pdb("1E4Y")  # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor")
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+```
+
+>Q1.
+
+read.pdb() reads a Protein Data Bank (PDB) coordinate file and returns a list of class "pdb" with 8 components.
+
+>Q2.
+
+trim.pdb() trims a pdb object to a subset of atoms.
+
+>Q3. 
+
+Deleting "sse=s1.chainA" would turn off the marginal black and grey rectangles. "sse" represents secondary structure object as returned from read.pdb.
+```{r}
+plotb3(s1.b, typ="l", ylab="Bfactor")
+```
+> Q4.
+
+A plot that combines the above plots together but shows them in different colors. 
+
+> Q5. 
+
+Protein 1 and protein 3 are more similar to each other.
+
+```{r}
+hc <- hclust( dist( rbind(s1.b, s2.b, s3.b) ) )
+plot(hc)
+```
+
+>Q6.
+
+```{r}
+#This is a function that takes a pdb file name as input and generate a plot as the output.
+analysis_code <- function(pdb){
+  #Input a pdb file name with quotation marks, e.g. pdb <- "4AKE"
+  protein <- read.pdb(pdb)
+  protein.chainA <- trim.pdb(protein, chain="A", elety="CA")
+  protein.b <- protein.chainA$atom$b
+  #Generate a plot as the output
+  plotb3(protein.b, sse=protein.chainA, typ="l", ylab="Bfactor")
+}
+
+analysis_code("4AKE")
+analysis_code("1AKE")
+analysis_code("1E4Y")
+
+
+```
+

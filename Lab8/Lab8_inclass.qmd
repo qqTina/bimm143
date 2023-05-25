@@ -1,0 +1,175 @@
+---
+title: "Lab8"
+author: "Qianqian Tao"
+format: pdf
+---
+
+## Quarto
+Today we are going to explore some data from the University of Wisconsin Cancer Center on Breast biopsy data. 
+```{r}
+wisc.df <- read.csv("WisconsinCancer.csv", row.names=1)
+head(wisc.df)
+
+```
+>Q1. How many observations are in this dataset?
+
+```{r}
+nrow(wisc.df)
+```
+
+There are `r nrow(wisc.df)` patients in this dataset.
+
+>Q2. How many of the observations have a malignant diagnosis?
+
+```{r}
+diagnosis <- wisc.df$diagnosis
+diagnosis_factor <- as.factor(diagnosis)
+table(diagnosis_factor)
+```
+Now exclude the diagnosis column from the data
+```{r}
+wisc.data <- wisc.df[,-1]
+```
+>Q. How many "dimensions", "variable", "columns" are there in this dataset?
+
+```{r}
+ncol(wisc.data)
+```
+
+>Q3. How many variables/features in the data are suffixed with _mean?
+
+```{r}
+sum(grepl("_mean",colnames(wisc.data)))
+
+```
+
+# Principal Component Analysis (PCA)
+
+To perform PCA in R we can use the `prcomp()` function. It takes an input as a numeric dataset and optional `scale=FALSE/TRUE` argument.
+
+We generally always want to set `scale=TRUE` but let's make sure by checking if the mean and standard deviation values are different across these 30 columns.
+```{r}
+round(colMeans(wisc.data))
+
+apply(wisc.data,2,sd)
+```
+>Q4. From your results, what proportion of the original variance is captured by the first principal components (PC1)?
+
+PC1 captures 44.27% of variance
+> Q5. How many principal components (PCs) are required to describe at least 70% of the original variance in the data?
+
+We need PC1, PC2 and PC3 to describe at least 70% of the variance.
+
+> Q6. How many principal components (PCs) are required to describe at least 90% of the original variance in the data?
+
+We need PC1 to PC7 to describe 90%. 
+
+```{r}
+
+wisc.pr <- prcomp(wisc.data, scale=TRUE)
+summary(wisc.pr)
+```
+```{r}
+attributes(wisc.pr)
+plot(wisc.pr$x[,1],wisc.pr$x[,2],col=diagnosis_factor,xlab = "PC1", ylab = "PC2" )
+
+```
+```{r}
+plot(wisc.pr$x[, 1],wisc.pr$x[, 3],col = diagnosis_factor, 
+     xlab = "PC1", ylab = "PC3")
+```
+> Q7. What stands out to you about this plot? Is it easy or difficult to understand? Why?
+
+It shows which variables are driving the differences, but it is hard to understand because the names are numbers. 
+
+```{r}
+biplot(wisc.pr)
+```
+
+
+```{r}
+library(ggplot2)
+df <- as.data.frame(wisc.pr$x)
+df$diagnosis <- diagnosis_factor
+
+ggplot(df, aes(x=PC1, y=PC2, col=diagnosis))+
+  geom_point()
+```
+>Q. How much variance is captured in the top 3 PCs?
+
+They capture 72.636% of the total variance. 
+
+> Q9. For the first principal component, what is the component of the loading vector (i.e. wisc.pr$rotation[,1]) for the feature concave.points_mean?
+
+```{r}
+wisc.pr$rotation["concave.points_mean",1]
+```
+
+```{r}
+attributes(wisc.pr)
+```
+# Combine PCA results with clustering.
+
+We can use our new PCR variables (i.e. the scores along the PCs contained in `pca$x` ) as input for other methods such as clustering.
+
+```{r}
+#Hclust needs a distance matrix as input
+d <- dist(wisc.pr$x[, 1:3])
+
+hc <- hclust(d, method = "ward.D2")
+plot(hc)
+```
+To get our cluster membership vector we can use the `cutree()` function and specify a height (`h=`) or number of groups (`k`).
+
+```{r}
+grps <- cutree(hc, h=80)
+table(grps)
+```
+
+I want to find out how many diagnosis "M" and "B" are in each grp?
+
+```{r}
+table(diagnosis,grps)
+```
+We can also plot our result using our clustering vector `grps`
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,2], col=grps)
+```
+
+```{r}
+ggplot(df, aes(x=PC1, y=PC2, col=grps))+
+  geom_point()
+```
+>Q15. What is the specificity and sensitivity of our current results?
+
+```{r}
+#Sensitivity
+sensitivity <- 179/(179+33)
+
+#Specificity
+specificity <- 333/(333+24)
+
+```
+The sensitivity is `r sensitivity` and specificity is `r specificity`.
+
+#Prediction
+
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata=new)
+npc
+
+```
+
+```{r}
+plot(wisc.pr$x[,1:2], col=grps)
+points(npc[,1], npc[,2], col="blue", pch=16, cex=3)
+text(npc[,1], npc[,2], c(1,2), col="white")
+```
+
+> Q16. Which of these new patients should we prioritize for follow up based on your results?
+
+
+

@@ -1,0 +1,77 @@
+---
+title: "Lab11_inclass"
+author: "Qianqian Tao"
+date: "2023-05-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Section 1. Proportion og G/G in a population
+
+Downloaded a CSV file from Ensemble <
+https://useast.ensembl.org/Homo_sapiens/Variation/Sample?db=core;r=17:39815101-39975102;v=rs8067378;vdb=variation;vf=105535077;sample=HG00109#373531_tablePanel >
+
+Here we read this CSV file
+```{r}
+mxl <- read.csv("373531-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8067378.csv")
+head(mxl)
+table(mxl$Genotype..forward.strand.)
+```
+
+```{r}
+table(mxl$Genotype..forward.strand.)/nrow(mxl)
+```
+
+Now let's look at a different population. I picked the GBR. 
+
+```{r}
+gbr <- read.csv("373522-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8067378.csv")
+table(gbr$Genotype..forward.strand.)/nrow(gbr)
+```
+
+This variant that is associated with childhood asthma is more frequent in
+the GBR population than the MKL population.
+
+
+Let's see if G|G versus A|G really affect the expression level of the gene
+One sample is obviously not enough to know what is happening in a population. You are interested in assessing genetic differences on a population scale. So, you processed about ~230 samples and did the normalization on a genome level. Now, you want to find whether there is any association of the 4 asthma-associated SNPs (rs8067378...) on ORMDL3 expression.
+
+>Q13: Read this file into R and determine the sample size for each genotype and their corresponding median expression levels for each of these genotypes.
+
+How many samples do we have?
+```{r}
+expr <- read.table("expression_level.txt")
+head(expr)
+```
+```{r}
+table(expr$geno)
+```
+
+```{r}
+nrow(expr)
+```
+```{r}
+library(tidyverse)
+expr %>%
+  group_by(geno) %>%
+  summarize(medianExp = median(exp))
+```
+ 
+ We have 462 samples including 108 for A/A, 233 for A/G and 121 for G/G. The median expression level for A/A is 31.24847, A/G is 25.06486, and G/G for 20.07363.  
+ 
+>Q14: Generate a boxplot with a box per genotype, what could you infer from the relative expression value between A/A and G/G displayed in this plot? Does the SNP effect the expression of ORMDL3?
+
+Let's make a boxplot
+```{r}
+library(ggplot2)
+ggplot(expr, aes(geno, exp, fill=geno))+
+  geom_boxplot(notch=TRUE)+
+  labs(x="Genotype", y="Normalized expression level", fill="Genotype")+
+  theme_bw()
+```
+
+
+According to the boxplot, G/G is associated with lower gene expression levels compared to A/A. Therefore, we could conclude that this G/G SNP reduces the expression level of the gene *ORMDL3*.

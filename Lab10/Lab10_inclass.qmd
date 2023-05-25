@@ -1,0 +1,79 @@
+---
+title: "Lab10_inclass"
+author: "Qianqian Tao"
+format: pdf
+---
+
+ADK (Adenelate Kinase) important drug target, know its molecular mechanism
+
+We will begin with getting an example ADK sequence from the database.
+We will then use this to find all 
+```{r}
+library(bio3d)
+
+aa <- get.seq("1ake_A")
+aa
+```
+We can now run BLAST with this sequence
+```{r}
+#b <- blast.pdb(aa)
+```
+
+```{r}
+#same as plot.blast(b)
+#hits <- plot(b)
+```
+Let's see what is in our `hits` object
+
+```{r}
+#hits$pdb.id
+```
+
+Now we can download all these top hits PDB structure files:
+```{r}
+# Download releated PDB files
+#?get.pdb
+```
+```{r}
+hits <- NULL
+hits$pdb.id <- c('1AKE_A','6S36_A','6RZE_A','3HPR_A','1E4V_A','5EJE_A','1E4Y_A','3X2S_A','6HAP_A','6HAM_A','4K46_A','3GMT_A','4PZL_A')
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+Now I want to align and supperpose these structures which are all over the place
+
+```{r}
+# Align releated PDBs; fit on top of each other, exefile run alignment on the same package 
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+Let's have a look at our `pdbs` object
+```{r}
+pdbs
+```
+
+We have our aligned and superposed structures we can perform all sorts of analysis on them. Let's do PCA...
+```{r}
+# Perform PCA
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+```
+
+Results of PCA on Adenylate kinase X-ray structures. Each dot represents one PDB structure.
+
+We can cluster the structures by RMSD (or any other method). 
+```{r}
+rd <- rmsd(pdbs)
+# Structure-based clustering
+hc.rd <- hclust(dist(rd))
+grps <- cutree(hc.rd, k=3)
+
+plot(pc.xray, 1:2, col=grps)
+#plot(pc.xray, 1:2, col="grey50", bg=grps.rd, pch=21, cex=1)
+```
+We can make a wee movie - a trajectory of the major differences of 
+```{r}
+# Visualize first principal component
+pc1 <- mktrj(pc.xray, pc=1, file="pc_1.pdb")
+```
+
